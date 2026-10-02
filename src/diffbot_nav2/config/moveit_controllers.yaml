@@ -1,0 +1,29 @@
+### MoveIt 2 官方控制器管理映射
+moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControllerManager
+
+moveit_simple_controller_manager:
+  controller_names:
+    - arm_controller
+    - gripper_controller
+
+  # 1. 机械臂 4 轴轨迹追踪控制器
+  arm_controller:
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: true
+    joints:
+      - arm_joint_1
+      - arm_joint_2
+      - arm_joint_3
+      - arm_joint_4
+
+  # 2. 末端双指夹爪控制器
+  #    与 ros2_controllers.yaml 保持一致: 双关节 JointTrajectoryController
+  #    (Gazebo 不支持 mimic, 左右指由同一控制器同值同步驱动)
+  gripper_controller:
+    action_ns: follow_joint_trajectory
+    type: FollowJointTrajectory
+    default: true
+    joints:
+      - left_finger_joint
+      - right_finger_joint

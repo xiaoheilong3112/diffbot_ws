@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="diffbot_arm">
+
+  <!-- 1. 机械臂主规划组 (Planning Group: arm) -->
+  <group name="arm">
+    <chain base_link="arm_base_link" tip_link="wrist_pitch_link"/>
+  </group>
+
+  <!-- 2. 末端夹爪规划组 (Planning Group: gripper) -->
+  <group name="gripper">
+    <link name="gripper_base_link"/>
+    <link name="left_finger_link"/>
+    <link name="right_finger_link"/>
+    <joint name="left_finger_joint"/>
+    <joint name="right_finger_joint"/>
+  </group>
+
+  <!-- 3. 末端执行器 (End-Effector) 绑定 -->
+  <end_effector name="robot_gripper" parent_link="wrist_pitch_link" group="gripper" parent_group="arm"/>
+
+  <!-- 4. 关键姿态预设 (Named Joint States) -->
+  <!-- 4.1 巡航运输姿态: 深度折叠、整体重心紧凑贴地 (航行必备) -->
+  <group_state name="transport" group="arm">
+    <joint name="arm_joint_1" value="0.0"/>
+    <joint name="arm_joint_2" value="1.30"/>
+    <joint name="arm_joint_3" value="-1.45"/>
+    <joint name="arm_joint_4" value="0.15"/>
+  </group_state>
+
+  <!-- 4.2 待命准备抓取姿态 -->
+  <group_state name="ready" group="arm">
+    <joint name="arm_joint_1" value="0.0"/>
+    <joint name="arm_joint_2" value="0.45"/>
+    <joint name="arm_joint_3" value="0.50"/>
+    <joint name="arm_joint_4" value="-0.95"/>
+  </group_state>
+
+  <!-- 夹爪开合姿态 (左右指由同一 JTC 同值同步驱动) -->
+  <group_state name="open" group="gripper">
+    <joint name="left_finger_joint" value="0.035"/>
+    <joint name="right_finger_joint" value="0.035"/>
+  </group_state>
+
+  <group_state name="close" group="gripper">
+    <joint name="left_finger_joint" value="0.002"/>
+    <joint name="right_finger_joint" value="0.002"/>
+  </group_state>
+
+  <!-- ======================================================== -->
+  <!-- 5. 核心避坑：自碰撞免检矩阵 (Allowed Collision Matrix, ACM) -->
+  <!-- ======================================================== -->
+  <!-- 严禁将底盘、固定基座与雷达之间判定为碰撞，否则 MoveIt 启动即报错自锁 -->
+  <disable_collisions link1="arm_base_link" link2="base_link" reason="Adjacent"/>
+  <disable_collisions link1="arm_base_link" link2="laser_link" reason="Never"/>
+  <disable_collisions link1="arm_base_link" link2="caster_wheel_link" reason="Never"/>
+  <!-- 雷达顶面(z=0.16)与 arm_link_1 底面(z=0.16)几何相切且水平重叠0.01m,
+       arm_link_1 绕自身竖轴旋转不改变占位 -> 任意关节角下 FCL 均判接触,
+       若不禁用将导致所有规划 GOAL_STATE_INVALID。该 0.01m 为装配公差, 物理上不产生接触力 -->
+  <disable_collisions link1="laser_link" link2="arm_link_1" reason="Never"/>
+  <disable_collisions link1="base_link" link2="left_wheel_link" reason="Adjacent"/>
+  <disable_collisions link1="base_link" link2="right_wheel_link" reason="Adjacent"/>
+  <disable_collisions link1="base_link" link2="caster_wheel_link" reason="Adjacent"/>
+  <disable_collisions link1="base_link" link2="laser_link" reason="Adjacent"/>
+  <disable_collisions link1="arm_link_1" link2="arm_base_link" reason="Adjacent"/>
+  <disable_collisions link1="arm_link_2" link2="arm_link_1" reason="Adjacent"/>
+  <disable_collisions link1="arm_link_3" link2="arm_link_2" reason="Adjacent"/>
+  <disable_collisions link1="wrist_pitch_link" link2="arm_link_3" reason="Adjacent"/>
+  <disable_collisions link1="gripper_base_link" link2="wrist_pitch_link" reason="Adjacent"/>
+  <disable_collisions link1="left_finger_link" link2="gripper_base_link" reason="Adjacent"/>
+  <disable_collisions link1="right_finger_link" link2="gripper_base_link" reason="Adjacent"/>
+
+</robot>

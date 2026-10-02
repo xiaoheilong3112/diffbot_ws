@@ -1,0 +1,21 @@
+# colcon 产物
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.pyc
+
+# 运行时
+.ros/
+*.log
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+
+# 工作台提取源与 AI 通用模板 (仅本地参考)
+docs/*.html
+.github/*.chatmode.md

@@ -1,0 +1,62 @@
+# ros2_control 控制器配置 (由 gz_ros2_control 插件加载)
+controller_manager:
+  ros__parameters:
+    update_rate: 100
+    use_sim_time: true
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+# 关节状态广播 (发布 /joint_states, 供 robot_state_publisher 更新 TF)
+# action: 无 (仅话题 /joint_states)
+joint_state_broadcaster:
+  ros__parameters:
+    use_sim_time: true
+
+# 4 轴机械臂关节轨迹控制器 (action: /arm_controller/follow_joint_trajectory)
+arm_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - arm_joint_1
+      - arm_joint_2
+      - arm_joint_3
+      - arm_joint_4
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: false
+
+# 平行双指夹爪 (action: /gripper_controller/follow_joint_trajectory)
+# 两指同值同步驱动: left/right 的 axis 方向相反, 相同 joint value 即对称开合.
+# open_loop_control: true -> 指尖压到工件被挡住时仍视为到位 (模拟夹持), 不因
+# 到不了目标位而 abort.
+gripper_controller:
+  ros__parameters:
+    use_sim_time: true
+    joints:
+      - left_finger_joint
+      - right_finger_joint
+    command_interfaces:
+      - position
+    state_interfaces:
+      - position
+      - velocity
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: true
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 2.0
