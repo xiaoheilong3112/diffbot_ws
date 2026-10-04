@@ -528,6 +528,44 @@ Visualization Manager:
     Planning Scene Topic: /monitored_planning_scene
     Robot Description: robot_description
     Value: true
+  - Class: rviz_default_plugins/Path
+    Enabled: true
+    Name: Local Plan (RPP)
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /local_plan
+    Color: 25; 255; 0
+    Line Style: Lines
+    Line Width: 0.03
+    Value: true
+  - Class: rviz_default_plugins/PointStamped
+    Enabled: true
+    Name: Lookahead Point
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /lookahead_point
+    Color: 255; 0; 0
+    Radius: 0.06
+    Value: true
+  - Class: rviz_default_plugins/Path
+    Enabled: true
+    Name: Collision Arc
+    Topic:
+      Depth: 5
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Reliability Policy: Reliable
+      Value: /lookahead_collision_arc
+    Color: 255; 85; 0
+    Line Style: Lines
+    Line Width: 0.02
+    Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

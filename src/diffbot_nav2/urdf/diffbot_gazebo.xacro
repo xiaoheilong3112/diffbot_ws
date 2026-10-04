@@ -68,11 +68,11 @@
     <sensor name="diffbot_lidar" type="gpu_lidar">
       <pose>0 0 0 0 0 0</pose>
       <topic>/scan</topic>
-      <update_rate>15</update_rate>
+      <update_rate>30</update_rate>
       <ray>
         <scan>
           <horizontal>
-            <samples>360</samples>
+            <samples>1440</samples>   <!-- 0.25deg: 束距<5cm@8m, 单一起点 raytrace 无死角 -->
             <resolution>1.0</resolution>
             <min_angle>-3.1415926</min_angle>
             <max_angle>3.1415926</max_angle>
@@ -90,7 +90,7 @@
         </noise>
       </ray>
       <always_on>true</always_on>
-      <visualize>true</visualize>
+      <visualize>false</visualize>  <!-- 关闭射线可视化, 降低 gpu_lidar 渲染负担 -->
     </sensor>
   </gazebo>
 

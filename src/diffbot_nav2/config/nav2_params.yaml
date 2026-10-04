@@ -1,10 +1,12 @@
 amcl:
   ros__parameters:
     use_sim_time: True
-    alpha1: 0.2
-    alpha2: 0.2
-    alpha3: 0.2
-    alpha4: 0.2
+    alpha1: 0.05   # 仿真轮式里程计噪声极小 -> 小 alpha 减小估计随机游走
+    alpha2: 0.05
+    alpha3: 0.05
+    alpha4: 0.05
+    update_min_d: 0.01   # 0.05 时终点最后一次更新可在停点前 5cm -> 真值/估计偏差把 0.05 验收线顶穿
+    update_min_a: 0.02
     base_frame_id: "base_footprint"
     global_frame_id: "map"
     odom_frame_id: "odom"
@@ -35,41 +37,47 @@ controller_server:
     progress_checker_plugins: ["progress_checker"]
     goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
+    # nav_2d_utils::OdomSubscriber 在 controller_server 节点级声明裸参数 odom_topic(默认 "odom")
+    # /odom 无发布者 -> curr_speed 恒 0 -> rotate 分支 clamp(w, curr±max_angular_accel*dt=±0.16) 恒 0.16
+    # -> 90° 到点对齐 13s 静止 -> progress_checker 10s 超时 -> recovery(spin) -> cmd_vel 符号翻转爆表
+    odom_topic: /odometry/filtered
 
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
+      required_movement_radius: 0.1  # 0.5 会在到点旋转/避障减速时误判 "Failed to make progress" 
       movement_time_allowance: 10.0
 
     general_goal_checker:
       plugin: "nav2_controller::SimpleGoalChecker"
       stateful: true
-      xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.03   # 收紧到验收线内 (AMCL 残余噪声 ~4cm), 否则物理终点可到 0.07 m
+      yaw_goal_tolerance: 0.08   # 文档验收: <=5 deg (~0.087 rad)
 
     # 重点：Regulated Pure Pursuit 控制器配置
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.4
       lookahead_dist: 0.6
-      min_lookahead_dist: 0.3
+      min_lookahead_dist: 0.5  # 文档 L95/L118: 低速前视过短引发高频振荡(符号翻转源), 0.3->0.5
       max_lookahead_dist: 0.9
       lookahead_time: 1.5
-      rotate_to_heading_angular_vel: 1.0
+      rotate_to_heading_angular_vel: 0.5  # 文档初值 0.8: 制动残余 0.8^2/(2*2.5)=0.13rad > yaw_tol 0.08 反打成翻转; 0.5 -> 0.05rad 不反打
       use_velocity_scaled_lookahead_dist: true
       min_approach_linear_velocity: 0.05
       approach_velocity_scaling_dist: 0.6
       use_regulated_linear_velocity_scaling: true
-      regulated_linear_scaling_min_radius: 0.5
+      regulated_linear_scaling_min_radius: 0.45  # 文档推荐 0.45 (曲率减速阈值)
       use_cost_regulated_linear_velocity_scaling: true
-      cost_scaling_dist: 0.5
+      cost_scaling_dist: 0.9    # 文档 0.4: 走廊中垂线 d≈0.6 在调节区外 -> 0.9 (scale=0.6/0.9=0.67 -> v≈0.27)
       cost_scaling_gain: 1.0
+      inflation_cost_scaling_factor: 2.0  # 必须等于 local costmap cost_scaling_factor, 否则反解距离失真
 
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 10.0
-      publish_frequency: 5.0
+      always_send_full_costmap: true  # raw/full 持续发布 (默认仅滚动重排时发)
+      update_frequency: 30.0  # 配合 30Hz 激光压低动态标记延迟 (验收 <=150ms)
+      publish_frequency: 20.0
       global_frame: odom
       robot_base_frame: base_footprint
       use_sim_time: True
@@ -91,14 +99,16 @@ local_costmap:
           data_type: "LaserScan"
           raytrace_max_range: 8.0
           obstacle_max_range: 6.0
+          inf_is_valid: true   # 无回波(inf)束也参与 raytrace 清除, 否则远墙方向残留死格
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 4.0
-        inflation_radius: 0.45
+        cost_scaling_factor: 2.0   # 缓坡代价衰减: 走廊内 RPP cost regulation 触发降速 (实验四 0.4->0.2)
+        inflation_radius: 0.90     # 必须 >= cost_scaling_dist: 否则 d>0.6 区 cost=0, costConstraint 直接跳过
 
 global_costmap:
   global_costmap:
     ros__parameters:
+      always_send_full_costmap: true  # raw/full 持续发布
       update_frequency: 2.0
       publish_frequency: 1.0
       global_frame: map
@@ -118,6 +128,10 @@ global_costmap:
           clearing: True
           marking: True
           data_type: "LaserScan"
+          max_obstacle_height: 2.0
+          raytrace_max_range: 8.0   # 默认 3.0 太小: 清除/标记受限于近距
+          obstacle_max_range: 6.0   # 默认 2.5 导致 global 不标记远距动态障碍
+          inf_is_valid: true        # 无回波(inf)束参与清除, 远墙方向不残留
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0

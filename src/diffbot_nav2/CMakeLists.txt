@@ -20,8 +20,9 @@ install(
 
 # 安装可执行任务脚本至 install/lib/diffbot_nav2 (供 ros2 run 调用)
 install(
-  PROGRAMS scripts/mobile_manipulation_demo.py
+  DIRECTORY scripts/
   DESTINATION lib/${PROJECT_NAME}
+  FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 
 ament_package()

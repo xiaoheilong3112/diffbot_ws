@@ -19,3 +19,6 @@ __pycache__/
 # 工作台提取源与 AI 通用模板 (仅本地参考)
 docs/*.html
 .github/*.chatmode.md
+
+# 第三方工作区提取源 (仅本地参考)
+third_party/
