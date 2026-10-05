@@ -37,6 +37,14 @@ arm_controller:
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
     open_loop_control: false
+    # doc §3: 轨迹/到位容差 (doc §8: 超时无反应或 drift 报错时调这里)
+    constraints:
+      stopped_velocity_tolerance: 0.01
+      goal_time: 0.5
+      arm_joint_1: { trajectory: 0.1, goal: 0.05 }
+      arm_joint_2: { trajectory: 0.1, goal: 0.05 }
+      arm_joint_3: { trajectory: 0.1, goal: 0.05 }
+      arm_joint_4: { trajectory: 0.1, goal: 0.05 }
 
 # 平行双指夹爪 (action: /gripper_controller/follow_joint_trajectory)
 # 两指同值同步驱动: left/right 的 axis 方向相反, 相同 joint value 即对称开合.
